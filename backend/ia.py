@@ -1,3 +1,10 @@
+import requests
+import os
+
+# La API Key ahora se toma de las variables de entorno (seguro)
+API_KEY = os.getenv("API_KEY")
+
+
 INSTRUCCIONES = """
 Eres Code IA, un asistente de programación extremadamente avanzado.
 Tu misión es ayudar al usuario con cualquier tarea relacionada con código.
@@ -38,5 +45,24 @@ RESPUESTA:
 """
 
 def responder(mensaje):
-    # Aquí luego conectaremos la API real
-    return f"[IA simulada] Recibí: {mensaje}"
+    url = "https://api.groq.com/openai/v1/chat/completions"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {API_KEY}"
+    }
+
+    data = {
+        "model": "mixtral-8x7b-32768",
+        "messages": [
+            {"role": "system", "content": INSTRUCCIONES},
+            {"role": "user", "content": mensaje}
+        ]
+    }
+
+    respuesta = requests.post(url, json=data, headers=headers)
+
+    try:
+        return respuesta.json()["choices"][0]["message"]["content"]
+    except:
+        return "⚠️ Error al procesar la respuesta de la IA."
