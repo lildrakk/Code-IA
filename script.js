@@ -8,7 +8,7 @@ const btnStop = document.getElementById("btn-stop");
 const typing = document.getElementById("typing");
 
 // ---------------------------------------------------------
-// ELEMENTOS DE ARCHIVOS (DESACTIVADOS POR AHORA)
+// ARCHIVOS (DESACTIVADOS POR AHORA)
 // ---------------------------------------------------------
 const btnFile = document.getElementById("btn-file");
 const fileInput = document.getElementById("file-input");
@@ -17,7 +17,7 @@ const attachedFilesDiv = document.getElementById("attached-files");
 let archivosAdjuntos = [];
 
 // ---------------------------------------------------------
-// ELEMENTOS DEL PANEL DE PREVIEW
+// PREVIEW
 // ---------------------------------------------------------
 const previewPanel = document.getElementById("preview-panel");
 const previewFrame = document.getElementById("preview-frame");
@@ -27,7 +27,6 @@ const btnRefresh = document.getElementById("preview-refresh");
 const btnFullscreen = document.getElementById("preview-fullscreen");
 const btnClose = document.getElementById("preview-close");
 
-// ARCHIVOS GENERADOS POR LA IA
 let lastHTML = "";
 let lastCSS = "";
 let lastJS = "";
@@ -35,9 +34,8 @@ let lastJS = "";
 let controller = null;
 
 // ---------------------------------------------------------
-// SISTEMA DE MENSAJES
+// FUNCIÓN PARA AGREGAR MENSAJES
 // ---------------------------------------------------------
-
 function agregarMensaje(tipo, texto) {
     const div = document.createElement("div");
     div.classList.add("message", tipo);
@@ -51,7 +49,7 @@ function agregarMensaje(tipo, texto) {
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
 
-    // Detectar si la IA devolvió una web completa
+    // Si la IA generó una web completa
     if (tipo === "ia" && texto.includes("<html")) {
         procesarWebGenerada(texto);
 
@@ -76,26 +74,34 @@ function agregarMensaje(tipo, texto) {
         return;
     }
 
-    // Detectar bloques de código
-    else if (texto.includes("```")) {
+    // Múltiples bloques de código
+    if (texto.includes("```")) {
         const partes = texto.split("```");
 
-        bubble.innerHTML = partes[0];
+        partes.forEach((parte, i) => {
+            if (i % 2 === 0) {
+                // Texto normal
+                if (parte.trim() !== "") {
+                    const p = document.createElement("div");
+                    p.textContent = parte;
+                    bubble.appendChild(p);
+                }
+            } else {
+                // Código
+                const code = document.createElement("pre");
+                code.classList.add("code-block");
+                code.textContent = parte;
 
-        const code = document.createElement("pre");
-        code.classList.add("code-block");
-        code.textContent = partes[1];
+                const copyBtn = document.createElement("button");
+                copyBtn.textContent = "Copiar";
+                copyBtn.classList.add("copy-btn");
+                copyBtn.onclick = () => navigator.clipboard.writeText(parte);
 
-        const copyBtn = document.createElement("button");
-        copyBtn.textContent = "Copiar";
-        copyBtn.classList.add("copy-btn");
-        copyBtn.onclick = () => navigator.clipboard.writeText(partes[1]);
-
-        code.appendChild(copyBtn);
-        bubble.appendChild(code);
-    }
-
-    else {
+                code.appendChild(copyBtn);
+                bubble.appendChild(code);
+            }
+        });
+    } else {
         bubble.textContent = texto;
     }
 
@@ -107,10 +113,9 @@ function agregarMensaje(tipo, texto) {
 }
 
 // ---------------------------------------------------------
-// ARCHIVOS ADJUNTOS (DESACTIVADOS POR AHORA)
+// ARCHIVOS (DESACTIVADOS POR AHORA)
 // ---------------------------------------------------------
-
-btnFile.onclick = () => alert("Los archivos están desactivados temporalmente.");
+btnFile.onclick = () => alert("Los archivos estarán disponibles pronto.");
 
 fileInput.onchange = () => {
     archivosAdjuntos = [];
@@ -118,9 +123,8 @@ fileInput.onchange = () => {
 };
 
 // ---------------------------------------------------------
-// ENVÍO DE MENSAJES (SIN ARCHIVOS)
+// ENVÍO DE MENSAJES
 // ---------------------------------------------------------
-
 async function enviar() {
     const texto = input.value.trim();
     if (!texto) return;
@@ -158,14 +162,25 @@ async function enviar() {
 
 btnEnviar.onclick = enviar;
 btnStop.onclick = () => controller?.abort();
-input.addEventListener("keypress", e => {
-    if (e.key === "Enter") enviar();
+
+// ---------------------------------------------------------
+// ENTER = SALTO DE LÍNEA
+// CTRL + ENTER = ENVIAR
+// ---------------------------------------------------------
+input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        if (e.ctrlKey) {
+            enviar();
+        } else {
+            e.preventDefault();
+            input.value += "\n";
+        }
+    }
 });
 
 // ---------------------------------------------------------
-// SISTEMA DE PREVIEW LOCAL PROFESIONAL
+// PREVIEW
 // ---------------------------------------------------------
-
 function procesarWebGenerada(texto) {
     lastHTML = extraerBloque(texto, "html");
     lastCSS = extraerBloque(texto, "css");
@@ -211,10 +226,6 @@ function actualizarPreview() {
     `);
     doc.close();
 }
-
-// ---------------------------------------------------------
-// BOTONES DEL PANEL DE PREVIEW
-// ---------------------------------------------------------
 
 btnPC.onclick = () => {
     previewFrame.style.width = "100%";
