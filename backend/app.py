@@ -14,14 +14,25 @@ def home():
 # Ruta POST para tu IA
 @app.post("/api/chat")
 def chat():
+    # Evita errores si el JSON viene vacío o mal formado
     data = request.get_json(silent=True) or {}
     mensaje = data.get("mensaje", "")
 
-    # Evitar errores si llega vacío
     if not mensaje:
         return jsonify({"respuesta": "No recibí ningún mensaje."})
 
-    respuesta = responder(mensaje)
+    try:
+        # Llamada a tu IA
+        respuesta = responder(mensaje)
+
+        # Si tu IA devuelve None o vacío, evitar que frontend se quede colgado
+        if not respuesta:
+            respuesta = "No pude generar una respuesta."
+
+    except Exception as e:
+        print("ERROR EN responder():", e)
+        respuesta = "Hubo un error procesando tu mensaje."
+
     return jsonify({"respuesta": respuesta})
 
 # Iniciar servidor
