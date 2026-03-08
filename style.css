@@ -174,48 +174,75 @@ button:hover {
 }
 
 /* ---------------------------------------------------------
-   PANEL DE PREVIEW PROFESIONAL
+   TARJETA PREVIEW EN EL CHAT
 --------------------------------------------------------- */
-#preview-panel {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #0d1117;
-    border-top: 3px solid #58a6ff;
-    display: flex;
-    flex-direction: column;
-    z-index: 9999;
-    padding: 0;
+.preview-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 10px;
+    text-align: center;
 }
 
+.preview-btn {
+    background: #238636;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.preview-btn:hover {
+    background: #2ea043;
+}
+
+/* ---------------------------------------------------------
+   PANEL DE PREVIEW PEQUEÑO Y FLOTANTE
+--------------------------------------------------------- */
+#preview-panel {
+    position: absolute;
+    width: 380px;
+    height: 500px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 999;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+/* Header del panel */
 #preview-header {
     background: #161b22;
-    padding: 12px 20px;
+    padding: 10px 12px;
     border-bottom: 1px solid #30363d;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 14px;
 }
 
+/* Botones del panel */
 #preview-buttons button {
-    margin-left: 8px;
+    margin-left: 5px;
     background: #30363d;
     border: 1px solid #3c444d;
+    padding: 5px 8px;
+    font-size: 12px;
 }
 
 #preview-buttons button:hover {
     background: #3c444d;
 }
 
+/* Iframe */
 #preview-frame {
-    flex: 1;
     width: 100%;
-    height: 100%;
+    height: calc(100% - 45px);
     border: none;
     background: white;
-    border-top: 1px solid #30363d;
 }
 
 /* Modo móvil */
