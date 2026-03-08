@@ -8,7 +8,7 @@ const btnStop = document.getElementById("btn-stop");
 const typing = document.getElementById("typing");
 
 // ---------------------------------------------------------
-// ELEMENTOS DE ARCHIVOS
+// ELEMENTOS DE ARCHIVOS (DESACTIVADOS POR AHORA)
 // ---------------------------------------------------------
 const btnFile = document.getElementById("btn-file");
 const fileInput = document.getElementById("file-input");
@@ -107,57 +107,38 @@ function agregarMensaje(tipo, texto) {
 }
 
 // ---------------------------------------------------------
-// SISTEMA DE ARCHIVOS ADJUNTOS
+// ARCHIVOS ADJUNTOS (DESACTIVADOS POR AHORA)
 // ---------------------------------------------------------
 
-btnFile.onclick = () => fileInput.click();
+btnFile.onclick = () => alert("Los archivos están desactivados temporalmente.");
 
 fileInput.onchange = () => {
-    archivosAdjuntos = Array.from(fileInput.files);
-    mostrarArchivosAdjuntos();
+    archivosAdjuntos = [];
+    attachedFilesDiv.innerHTML = "";
 };
 
-function mostrarArchivosAdjuntos() {
-    attachedFilesDiv.innerHTML = "";
-
-    archivosAdjuntos.forEach(file => {
-        const tag = document.createElement("div");
-        tag.classList.add("file-tag");
-        tag.textContent = "📎 " + file.name;
-        attachedFilesDiv.appendChild(tag);
-    });
-}
-
 // ---------------------------------------------------------
-// ENVÍO DE MENSAJES + ARCHIVOS
+// ENVÍO DE MENSAJES (SIN ARCHIVOS)
 // ---------------------------------------------------------
 
 async function enviar() {
     const texto = input.value.trim();
-    if (!texto && archivosAdjuntos.length === 0) return;
+    if (!texto) return;
 
-    agregarMensaje("usuario", texto || "📎 Archivo enviado");
+    agregarMensaje("usuario", texto);
 
     typing.classList.remove("hidden");
     btnStop.classList.remove("hidden");
 
     controller = new AbortController();
 
-    const formData = new FormData();
-    formData.append("mensaje", texto);
-
-    archivosAdjuntos.forEach(file => {
-        formData.append("archivos", file);
-    });
-
     input.value = "";
-    archivosAdjuntos = [];
-    attachedFilesDiv.innerHTML = "";
 
     try {
         const res = await fetch("https://code-ia-3uq5.onrender.com/api/chat", {
             method: "POST",
-            body: formData,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mensaje: texto }),
             signal: controller.signal
         });
 
@@ -206,7 +187,6 @@ function extraerBloque(texto, tipo) {
 function abrirPreview(bubble) {
     previewPanel.classList.remove("hidden");
 
-    // Posicionar debajo del mensaje
     const rect = bubble.getBoundingClientRect();
     previewPanel.style.top = rect.bottom + 10 + "px";
     previewPanel.style.left = rect.left + "px";
