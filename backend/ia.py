@@ -297,7 +297,7 @@ FORMATO DE RESPUESTA
 4. Si el usuario pide paso a paso, explica profundamente cada parte.
 """
 
-def responder(mensaje):
+def responder(mensaje: str) -> str:
     url = "https://api.groq.com/openai/v1/chat/completions"
 
     headers = {
@@ -313,9 +313,25 @@ def responder(mensaje):
         ]
     }
 
-    respuesta = requests.post(url, json=data, headers=headers)
-
     try:
-        return respuesta.json()["choices"][0]["message"]["content"]
-    except:
+        # timeout para que no se quede colgado eternamente
+        resp = requests.post(url, json=data, headers=headers, timeout=25)
+
+        # si Groq responde con error HTTP
+        if resp.status_code != 200:
+            print("Error Groq:", resp.status_code, resp.text)
+            return "⚠️ El modelo tardó demasiado o devolvió un error. Intenta de nuevo."
+
+        j = resp.json()
+        contenido = j.get("choices", [{}])[0].get("message", {}).get("content")
+
+        if not contenido:
+            return "⚠️ No pude generar una respuesta válida."
+
+        return contenido
+
+    except requests.exceptions.Timeout:
+        return "⚠️ El modelo tardó demasiado en responder. Prueba con un mensaje más corto o inténtalo de nuevo."
+    except Exception as e:
+        print("ERROR en responder():", e)
         return "⚠️ Error al procesar la respuesta de la IA."
