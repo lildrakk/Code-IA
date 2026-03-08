@@ -303,15 +303,17 @@ def responder(mensaje: str) -> str:
     print("MENSAJE RECIBIDO:", mensaje)
     print("===========================")
 
-    url = "https://api.deepseek.com/chat/completions"
+    url = "https://openrouter.ai/api/v1/chat/completions"
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {API_KEY}"
+        "Authorization": f"Bearer {API_KEY}",
+        "HTTP-Referer": "https://lildrakk.github.io",  # tu web
+        "X-Title": "Code IA"
     }
 
     data = {
-        "model": "deepseek-chat",
+        "model": "meta-llama/llama-3-70b-instruct",  # modelo GRATIS
         "messages": [
             {"role": "system", "content": INSTRUCCIONES},
             {"role": "user", "content": mensaje}
@@ -321,23 +323,22 @@ def responder(mensaje: str) -> str:
     try:
         resp = requests.post(url, json=data, headers=headers, timeout=20)
 
-        # Si DeepSeek devuelve error, lo mostramos en logs
         if resp.status_code != 200:
-            print("ERROR DEEPSEEK:", resp.status_code, resp.text)
-            return f"⚠️ Error de DeepSeek ({resp.status_code}). Revisa tu API Key o el servidor."
+            print("ERROR OPENROUTER:", resp.status_code, resp.text)
+            return f"⚠️ Error del servidor ({resp.status_code})."
 
         j = resp.json()
         contenido = j.get("choices", [{}])[0].get("message", {}).get("content")
 
         if not contenido:
-            print("ERROR: DeepSeek devolvió JSON sin contenido:", j)
+            print("ERROR: JSON vacío:", j)
             return "⚠️ No pude generar una respuesta válida."
 
-        print("RESPUESTA DEEPSEEK:", contenido[:200])  # mostramos solo los primeros 200 chars
+        print("RESPUESTA:", contenido[:200])
         return contenido
 
     except requests.exceptions.Timeout:
-        print("ERROR: Timeout al llamar a DeepSeek")
+        print("ERROR: Timeout")
         return "⚠️ La IA tardó demasiado en responder."
 
     except Exception as e:
