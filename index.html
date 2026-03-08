@@ -32,7 +32,9 @@
 
             <!-- BOTÓN DE ARCHIVOS -->
             <button id="btn-file" class="file-btn">📎</button>
-            <input type="file" id="file-input" class="hidden" multiple>
+
+            <!-- INPUT DE ARCHIVOS (OCULTO) -->
+            <input type="file" id="file-input" class="hidden" multiple accept="image/*">
 
             <!-- TEXTAREA PROFESIONAL -->
             <textarea id="mensaje" placeholder="Escribe tu mensaje aquí..."></textarea>
@@ -44,7 +46,7 @@
             <button id="btn-stop" class="stop-btn hidden">Detener</button>
         </div>
 
-        <!-- ARCHIVOS ADJUNTADOS -->
+        <!-- ARCHIVOS ADJUNTADOS (MINIATURAS) -->
         <div id="attached-files" class="attached-files"></div>
 
     </main>
