@@ -54,7 +54,26 @@ function agregarMensaje(tipo, texto) {
     // Detectar si la IA devolvió una web completa
     if (tipo === "ia" && texto.includes("<html")) {
         procesarWebGenerada(texto);
-        bubble.textContent = "📄 Se generó una página web. Abriendo preview...";
+
+        bubble.innerHTML = `
+            <div class="preview-card">
+                <strong>📄 Página web generada</strong><br>
+                Haz clic en PREVIEW para verla.
+                <br><br>
+                <button class="preview-btn">PREVIEW</button>
+            </div>
+        `;
+
+        setTimeout(() => {
+            const btn = bubble.querySelector(".preview-btn");
+            if (btn) btn.onclick = () => abrirPreview(bubble);
+        }, 50);
+
+        div.appendChild(avatar);
+        div.appendChild(bubble);
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+        return;
     }
 
     // Detectar bloques de código
@@ -170,8 +189,6 @@ function procesarWebGenerada(texto) {
     lastHTML = extraerBloque(texto, "html");
     lastCSS = extraerBloque(texto, "css");
     lastJS = extraerBloque(texto, "javascript");
-
-    abrirPreview();
 }
 
 function extraerBloque(texto, tipo) {
@@ -186,8 +203,14 @@ function extraerBloque(texto, tipo) {
         .trim();
 }
 
-function abrirPreview() {
+function abrirPreview(bubble) {
     previewPanel.classList.remove("hidden");
+
+    // Posicionar debajo del mensaje
+    const rect = bubble.getBoundingClientRect();
+    previewPanel.style.top = rect.bottom + 10 + "px";
+    previewPanel.style.left = rect.left + "px";
+
     actualizarPreview();
 }
 
@@ -215,7 +238,7 @@ function actualizarPreview() {
 
 btnPC.onclick = () => {
     previewFrame.style.width = "100%";
-    previewFrame.style.height = "600px";
+    previewFrame.style.height = "500px";
 };
 
 btnMobile.onclick = () => {
