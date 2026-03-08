@@ -44,9 +44,20 @@ def chat():
             respuesta = responder_mixto(mensaje, imagenes_b64)
             return Response(respuesta, mimetype="text/plain")
 
-        # Caso 3: solo texto (pero enviado como form-data)
+        # Caso 3: solo texto (pero enviado como form-data) → STREAMING REAL
         if mensaje and not imagenes_b64:
-            return Response(responder_stream(mensaje), mimetype="text/plain")
+
+            def generar():
+                try:
+                    for chunk in responder_stream(mensaje):
+                        yield chunk
+                except GeneratorExit:
+                    print("Cliente canceló la conexión.")
+                except Exception as e:
+                    print("ERROR STREAM:", e)
+                    yield "⚠️ Error procesando la respuesta."
+
+            return Response(generar(), mimetype="text/plain")
 
     # Si viene como JSON (solo texto)
     data = request.get_json(silent=True) or {}
