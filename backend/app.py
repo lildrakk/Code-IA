@@ -4,7 +4,7 @@ from ia import responder
 import os
 
 app = Flask(__name__)
-CORS(app)  # Permite que tu frontend llame al backend
+CORS(app)
 
 # Ruta GET para que Render no devuelva 405
 @app.get("/")
@@ -14,18 +14,18 @@ def home():
 # Ruta POST para tu IA
 @app.post("/api/chat")
 def chat():
-    # Evita errores si el JSON viene vacío o mal formado
+    # Leer JSON del frontend
     data = request.get_json(silent=True) or {}
-    mensaje = data.get("mensaje", "")
+    mensaje = data.get("mensaje", "").strip()
 
+    # Si viene vacío, avisar
     if not mensaje:
         return jsonify({"respuesta": "No recibí ningún mensaje."})
 
     try:
-        # Llamada a tu IA
+        # Llamada a tu IA DeepSeek
         respuesta = responder(mensaje)
 
-        # Si tu IA devuelve None o vacío, evitar que frontend se quede colgado
         if not respuesta:
             respuesta = "No pude generar una respuesta."
 
