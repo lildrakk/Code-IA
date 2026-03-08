@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from ia import responder
 import os
 
 app = Flask(__name__)
+CORS(app)  # ← Permite que tu frontend llame al backend
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
