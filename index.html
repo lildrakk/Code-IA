@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Code IA - Asistente de Programación</title>
 
-    <!-- Fuente bonita -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
-
-    <!-- Estilos -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,16 +18,18 @@
     <main>
         <div id="chat-container">
             <div id="chat"></div>
+            <div id="typing" class="typing hidden">Code IA está escribiendo...</div>
         </div>
 
         <div id="input-area">
             <input id="mensaje" type="text" placeholder="Escribe tu mensaje aquí...">
-            <button id="btn-enviar" onclick="enviar()">Enviar</button>
+            <button id="btn-enviar">Enviar</button>
+            <button id="btn-stop" class="hidden stop">Detener</button>
         </div>
     </main>
 
     <footer>
-        <p>Creado por Juan — Proyecto Code IA</p>
+        <p>Creado por lil_drakko — Proyecto Code IA</p>
     </footer>
 
     <script src="script.js"></script>
