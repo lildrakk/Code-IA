@@ -8,13 +8,44 @@ const btnStop = document.getElementById("btn-stop");
 const typing = document.getElementById("typing");
 
 // ---------------------------------------------------------
-// ARCHIVOS (DESACTIVADOS POR AHORA)
+// ARCHIVOS (ACTIVADOS)
 // ---------------------------------------------------------
 const btnFile = document.getElementById("btn-file");
 const fileInput = document.getElementById("file-input");
 const attachedFilesDiv = document.getElementById("attached-files");
 
 let archivosAdjuntos = [];
+
+btnFile.onclick = () => fileInput.click();
+
+fileInput.onchange = () => {
+    archivosAdjuntos = [...fileInput.files];
+    attachedFilesDiv.innerHTML = "";
+
+    archivosAdjuntos.forEach((file, index) => {
+        const url = URL.createObjectURL(file);
+
+        const mini = document.createElement("div");
+        mini.classList.add("miniatura");
+
+        mini.innerHTML = `
+            <img src="${url}" class="mini-img">
+            <span class="mini-close" data-i="${index}">✖</span>
+        `;
+
+        attachedFilesDiv.appendChild(mini);
+    });
+
+    // Eliminar miniatura
+    attachedFilesDiv.onclick = e => {
+        if (e.target.classList.contains("mini-close")) {
+            const i = e.target.dataset.i;
+            archivosAdjuntos.splice(i, 1);
+            fileInput.value = "";
+            fileInput.onchange();
+        }
+    };
+};
 
 // ---------------------------------------------------------
 // PREVIEW
@@ -36,7 +67,7 @@ let controller = null;
 // ---------------------------------------------------------
 // FUNCIÓN PARA AGREGAR MENSAJES
 // ---------------------------------------------------------
-function agregarMensaje(tipo, texto) {
+function agregarMensaje(tipo, contenido) {
     const div = document.createElement("div");
     div.classList.add("message", tipo);
 
@@ -50,8 +81,8 @@ function agregarMensaje(tipo, texto) {
     bubble.classList.add("bubble");
 
     // Si la IA generó una web completa
-    if (tipo === "ia" && texto.includes("<html")) {
-        procesarWebGenerada(texto);
+    if (tipo === "ia" && contenido.includes("<html")) {
+        procesarWebGenerada(contenido);
 
         bubble.innerHTML = `
             <div class="preview-card">
@@ -75,19 +106,17 @@ function agregarMensaje(tipo, texto) {
     }
 
     // Múltiples bloques de código
-    if (texto.includes("```")) {
-        const partes = texto.split("```");
+    if (contenido.includes("```")) {
+        const partes = contenido.split("```");
 
         partes.forEach((parte, i) => {
             if (i % 2 === 0) {
-                // Texto normal
                 if (parte.trim() !== "") {
                     const p = document.createElement("div");
                     p.textContent = parte;
                     bubble.appendChild(p);
                 }
             } else {
-                // Código
                 const code = document.createElement("pre");
                 code.classList.add("code-block");
                 code.textContent = parte;
@@ -102,7 +131,7 @@ function agregarMensaje(tipo, texto) {
             }
         });
     } else {
-        bubble.textContent = texto;
+        bubble.textContent = contenido;
     }
 
     div.appendChild(avatar);
@@ -113,23 +142,15 @@ function agregarMensaje(tipo, texto) {
 }
 
 // ---------------------------------------------------------
-// ARCHIVOS (DESACTIVADOS POR AHORA)
-// ---------------------------------------------------------
-btnFile.onclick = () => alert("Los archivos estarán disponibles pronto.");
-
-fileInput.onchange = () => {
-    archivosAdjuntos = [];
-    attachedFilesDiv.innerHTML = "";
-};
-
-// ---------------------------------------------------------
-// ENVÍO DE MENSAJES
+// ENVÍO DE MENSAJES (MULTIMODAL)
 // ---------------------------------------------------------
 async function enviar() {
     const texto = input.value.trim();
-    if (!texto) return;
+    const hayImagenes = archivosAdjuntos.length > 0;
 
-    agregarMensaje("usuario", texto);
+    if (!texto && !hayImagenes) return;
+
+    agregarMensaje("usuario", texto || "[Imagen]");
 
     typing.classList.remove("hidden");
     btnStop.classList.remove("hidden");
@@ -139,19 +160,41 @@ async function enviar() {
     input.value = "";
 
     try {
-        const res = await fetch("https://code-ia-3uq5.onrender.com/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mensaje: texto }),
-            signal: controller.signal
-        });
+        let res;
 
-        const data = await res.json();
+        if (hayImagenes) {
+            // Enviar como multipart/form-data
+            const form = new FormData();
+            form.append("mensaje", texto);
+
+            archivosAdjuntos.forEach(img => form.append("imagenes", img));
+
+            res = await fetch("https://code-ia-3uq5.onrender.com/api/chat", {
+                method: "POST",
+                body: form,
+                signal: controller.signal
+            });
+
+        } else {
+            // Enviar solo texto
+            res = await fetch("https://code-ia-3uq5.onrender.com/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mensaje: texto }),
+                signal: controller.signal
+            });
+        }
+
+        const respuestaTexto = await res.text();
 
         typing.classList.add("hidden");
         btnStop.classList.add("hidden");
 
-        agregarMensaje("ia", data.respuesta);
+        agregarMensaje("ia", respuestaTexto);
+
+        archivosAdjuntos = [];
+        attachedFilesDiv.innerHTML = "";
+        fileInput.value = "";
 
     } catch (e) {
         typing.classList.add("hidden");
