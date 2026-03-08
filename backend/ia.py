@@ -53,7 +53,7 @@ def responder(mensaje):
     }
 
     data = {
-        "model": "mixtral-8x7b-32768",
+        "model": "mixtral-8x7b",,
         "messages": [
             {"role": "system", "content": INSTRUCCIONES},
             {"role": "user", "content": mensaje}
