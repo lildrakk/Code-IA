@@ -65,17 +65,11 @@ let lastJS = "";
 let controller = null;
 
 // ---------------------------------------------------------
-// FUNCIÓN PARA AGREGAR MENSAJES
+// FUNCIÓN PARA AGREGAR MENSAJES (SIN AVATAR)
 // ---------------------------------------------------------
 function agregarMensaje(tipo, contenido) {
     const div = document.createElement("div");
     div.classList.add("message", tipo);
-
-    const avatar = document.createElement("img");
-    avatar.classList.add("avatar");
-    avatar.src = tipo === "usuario"
-        ? "https://i.imgur.com/0y0y0y0.png"
-        : "https://i.imgur.com/1X1X1X1.png";
 
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
@@ -98,7 +92,6 @@ function agregarMensaje(tipo, contenido) {
             if (btn) btn.onclick = () => abrirPreview(bubble);
         }, 50);
 
-        div.appendChild(avatar);
         div.appendChild(bubble);
         chat.appendChild(div);
         chat.scrollTop = chat.scrollHeight;
@@ -134,9 +127,7 @@ function agregarMensaje(tipo, contenido) {
         bubble.textContent = contenido;
     }
 
-    div.appendChild(avatar);
     div.appendChild(bubble);
-
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
 }
@@ -163,7 +154,6 @@ async function enviar() {
         let res;
 
         if (hayImagenes) {
-            // Enviar como multipart/form-data
             const form = new FormData();
             form.append("mensaje", texto);
 
@@ -176,7 +166,6 @@ async function enviar() {
             });
 
         } else {
-            // Enviar solo texto
             res = await fetch("https://code-ia-3uq5.onrender.com/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
