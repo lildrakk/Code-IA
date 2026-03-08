@@ -22,10 +22,18 @@
         </div>
 
         <div id="input-area">
+
+            <!-- BOTÓN PARA ADJUNTAR ARCHIVOS -->
+            <button id="btn-file" class="file-btn">📎</button>
+            <input type="file" id="file-input" class="hidden" multiple>
+
             <input id="mensaje" type="text" placeholder="Escribe tu mensaje aquí...">
             <button id="btn-enviar">Enviar</button>
             <button id="btn-stop" class="hidden stop">Detener</button>
         </div>
+
+        <!-- MOSTRAR ARCHIVOS ADJUNTADOS -->
+        <div id="attached-files"></div>
     </main>
 
     <footer>
