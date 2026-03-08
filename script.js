@@ -47,25 +47,10 @@ fileInput.onchange = () => {
     };
 };
 
-// ---------------------------------------------------------
-// PREVIEW
-// ---------------------------------------------------------
-const previewPanel = document.getElementById("preview-panel");
-const previewFrame = document.getElementById("preview-frame");
-const btnPC = document.getElementById("preview-pc");
-const btnMobile = document.getElementById("preview-mobile");
-const btnRefresh = document.getElementById("preview-refresh");
-const btnFullscreen = document.getElementById("preview-fullscreen");
-const btnClose = document.getElementById("preview-close");
-
-let lastHTML = "";
-let lastCSS = "";
-let lastJS = "";
-
 let controller = null;
 
 // ---------------------------------------------------------
-// FUNCIÓN PARA AGREGAR MENSAJES (SIN AVATAR)
+// FUNCIÓN PARA AGREGAR MENSAJES (SIN PREVIEW WEB)
 // ---------------------------------------------------------
 function agregarMensaje(tipo, contenido) {
     const div = document.createElement("div");
@@ -73,30 +58,6 @@ function agregarMensaje(tipo, contenido) {
 
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
-
-    // Si la IA generó una web completa
-    if (tipo === "ia" && contenido.includes("<html")) {
-        procesarWebGenerada(contenido);
-
-        bubble.innerHTML = `
-            <div class="preview-card">
-                <strong>📄 Página web generada</strong><br>
-                Haz clic en PREVIEW para verla.
-                <br><br>
-                <button class="preview-btn">PREVIEW</button>
-            </div>
-        `;
-
-        setTimeout(() => {
-            const btn = bubble.querySelector(".preview-btn");
-            if (btn) btn.onclick = () => abrirPreview(bubble);
-        }, 50);
-
-        div.appendChild(bubble);
-        chat.appendChild(div);
-        chat.scrollTop = chat.scrollHeight;
-        return;
-    }
 
     // Múltiples bloques de código
     if (contenido.includes("```")) {
@@ -209,72 +170,3 @@ input.addEventListener("keydown", e => {
         }
     }
 });
-
-// ---------------------------------------------------------
-// PREVIEW
-// ---------------------------------------------------------
-function procesarWebGenerada(texto) {
-    lastHTML = extraerBloque(texto, "html");
-    lastCSS = extraerBloque(texto, "css");
-    lastJS = extraerBloque(texto, "javascript");
-}
-
-function extraerBloque(texto, tipo) {
-    const regex = new RegExp("```" + tipo + "[\\s\\S]*?```", "g");
-    const match = texto.match(regex);
-
-    if (!match) return "";
-
-    return match[0]
-        .replace("```" + tipo, "")
-        .replace("```", "")
-        .trim();
-}
-
-function abrirPreview(bubble) {
-    previewPanel.classList.remove("hidden");
-
-    const rect = bubble.getBoundingClientRect();
-    previewPanel.style.top = rect.bottom + 10 + "px";
-    previewPanel.style.left = rect.left + "px";
-
-    actualizarPreview();
-}
-
-function actualizarPreview() {
-    const doc = previewFrame.contentDocument;
-
-    doc.open();
-    doc.write(`
-        <html>
-        <head>
-            <style>${lastCSS}</style>
-        </head>
-        <body>
-            ${lastHTML}
-            <script>${lastJS}</script>
-        </body>
-        </html>
-    `);
-    doc.close();
-}
-
-btnPC.onclick = () => {
-    previewFrame.style.width = "100%";
-    previewFrame.style.height = "500px";
-};
-
-btnMobile.onclick = () => {
-    previewFrame.style.width = "375px";
-    previewFrame.style.height = "667px";
-};
-
-btnRefresh.onclick = actualizarPreview;
-
-btnFullscreen.onclick = () => {
-    previewPanel.requestFullscreen();
-};
-
-btnClose.onclick = () => {
-    previewPanel.classList.add("hidden");
-};
