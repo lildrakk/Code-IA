@@ -298,7 +298,7 @@ FORMATO DE RESPUESTA
 """
 
 def responder(mensaje: str) -> str:
-    url = "https://api.groq.com/openai/v1/chat/completions"
+    url = "https://api.deepseek.com/chat/completions"
 
     headers = {
         "Content-Type": "application/json",
@@ -306,7 +306,7 @@ def responder(mensaje: str) -> str:
     }
 
     data = {
-        "model": "mixtral-8x7b",
+        "model": "deepseek-chat",
         "messages": [
             {"role": "system", "content": INSTRUCCIONES},
             {"role": "user", "content": mensaje}
@@ -314,13 +314,10 @@ def responder(mensaje: str) -> str:
     }
 
     try:
-        # timeout para que no se quede colgado eternamente
-        resp = requests.post(url, json=data, headers=headers, timeout=25)
+        resp = requests.post(url, json=data, headers=headers, timeout=20)
 
-        # si Groq responde con error HTTP
         if resp.status_code != 200:
-            print("Error Groq:", resp.status_code, resp.text)
-            return "⚠️ El modelo tardó demasiado o devolvió un error. Intenta de nuevo."
+            return "⚠️ La IA tardó demasiado o devolvió un error."
 
         j = resp.json()
         contenido = j.get("choices", [{}])[0].get("message", {}).get("content")
@@ -331,7 +328,7 @@ def responder(mensaje: str) -> str:
         return contenido
 
     except requests.exceptions.Timeout:
-        return "⚠️ El modelo tardó demasiado en responder. Prueba con un mensaje más corto o inténtalo de nuevo."
-    except Exception as e:
-        print("ERROR en responder():", e)
-        return "⚠️ Error al procesar la respuesta de la IA."
+        return "⚠️ La IA tardó demasiado en responder."
+
+    except Exception:
+        return "⚠️ Error inesperado procesando tu mensaje."
