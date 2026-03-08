@@ -3,13 +3,9 @@ import os
 import sqlite3
 import threading
 
-# ============================
-# CONFIGURACIÓN
-# ============================
-
 API_KEY = os.getenv("API_KEY")
 DB_PATH = "historial.db"
-MAX_MENSAJES = 30  # contexto reciente
+MAX_MENSAJES = 30
 
 lock = threading.Lock()
 
@@ -59,32 +55,26 @@ FORMATO DE RESPUESTA
 4. Si el usuario pide algo visual (web, dashboard), organiza bien el HTML/CSS/JS.
 """
 
-# ============================
-# BASE DE DATOS (MEMORIA)
-# ============================
 
+# ------------------------------
+# MEMORIA
+# ------------------------------
 def init_db():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS mensajes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 role TEXT NOT NULL,
-                content TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                content TEXT NOT NULL
             )
         """)
         conn.commit()
 
-def guardar_mensaje(role, content):
+def guardar(role, content):
     with lock:
         with sqlite3.connect(DB_PATH) as conn:
-            conn.execute(
-                "INSERT INTO mensajes (role, content) VALUES (?, ?)",
-                (role, content)
-            )
+            conn.execute("INSERT INTO mensajes (role, content) VALUES (?,?)", (role, content))
             conn.commit()
-
-            # Limpiar mensajes viejos (mantener solo los últimos MAX_MENSAJES)
             conn.execute(f"""
                 DELETE FROM mensajes
                 WHERE id NOT IN (
@@ -93,31 +83,18 @@ def guardar_mensaje(role, content):
             """)
             conn.commit()
 
-def cargar_historial():
+def historial():
     with sqlite3.connect(DB_PATH) as conn:
-        rows = conn.execute("""
-            SELECT role, content FROM mensajes ORDER BY id ASC
-        """).fetchall()
+        rows = conn.execute("SELECT role, content FROM mensajes ORDER BY id ASC").fetchall()
         return [{"role": r[0], "content": r[1]} for r in rows]
 
-# Inicializar BD al arrancar
 init_db()
 
-# ============================
-# FUNCIÓN PRINCIPAL
-# ============================
-
-def responder(mensaje: str) -> str:
-    print("========== DEBUG ==========")
-    print("API_KEY:", API_KEY)
-    print("MENSAJE RECIBIDO:", mensaje[:500])
-    print("===========================")
-
-    # Guardar mensaje del usuario en la memoria
-    guardar_mensaje("user", mensaje)
-
-    # Cargar historial reciente
-    historial = cargar_historial()
+# ------------------------------
+# STREAMING
+# ------------------------------
+def responder_stream(mensaje):
+    guardar("user", mensaje)
 
     url = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -130,36 +107,36 @@ def responder(mensaje: str) -> str:
 
     data = {
         "model": "meta-llama/llama-3-70b-instruct",
+        "stream": True,
         "messages": [
             {"role": "system", "content": INSTRUCCIONES},
-            *historial
+            *historial()
         ]
     }
 
-    try:
-        resp = requests.post(url, json=data, headers=headers, timeout=90)
+    with requests.post(url, json=data, headers=headers, stream=True) as r:
+        respuesta_completa = ""
 
-        if resp.status_code != 200:
-            print("ERROR OPENROUTER:", resp.status_code, resp.text)
-            return f"⚠️ Error del servidor ({resp.status_code})."
+        for linea in r.iter_lines():
+            if not linea:
+                continue
 
-        j = resp.json()
-        contenido = j.get("choices", [{}])[0].get("message", {}).get("content")
+            try:
+                linea = linea.decode("utf-8")
+                if linea.startswith("data: "):
+                    contenido = linea[6:]
+                    if contenido == "[DONE]":
+                        break
 
-        if not contenido:
-            print("ERROR: JSON vacío:", j)
-            return "⚠️ No pude generar una respuesta válida."
+                    import json
+                    j = json.loads(contenido)
+                    delta = j["choices"][0]["delta"].get("content", "")
 
-        # Guardar respuesta de la IA en la memoria
-        guardar_mensaje("assistant", contenido)
+                    if delta:
+                        respuesta_completa += delta
+                        yield delta
 
-        print("RESPUESTA (preview):", contenido[:500])
-        return contenido
+            except Exception as e:
+                print("ERROR STREAM:", e)
 
-    except requests.exceptions.Timeout:
-        print("ERROR: Timeout")
-        return "⚠️ La IA tardó demasiado en responder. Prueba a pedirlo por partes."
-
-    except Exception as e:
-        print("ERROR INESPERADO:", e)
-        return "⚠️ Error inesperado procesando tu mensaje."
+        guardar("assistant", respuesta_completa)
