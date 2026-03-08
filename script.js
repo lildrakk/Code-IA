@@ -1,12 +1,24 @@
+// ---------------------------------------------------------
+// ELEMENTOS DEL CHAT
+// ---------------------------------------------------------
 const chat = document.getElementById("chat");
 const input = document.getElementById("mensaje");
 const btnEnviar = document.getElementById("btn-enviar");
 const btnStop = document.getElementById("btn-stop");
 const typing = document.getElementById("typing");
 
-let controller = null;
+// ---------------------------------------------------------
+// ELEMENTOS DE ARCHIVOS
+// ---------------------------------------------------------
+const btnFile = document.getElementById("btn-file");
+const fileInput = document.getElementById("file-input");
+const attachedFilesDiv = document.getElementById("attached-files");
 
+let archivosAdjuntos = [];
+
+// ---------------------------------------------------------
 // ELEMENTOS DEL PANEL DE PREVIEW
+// ---------------------------------------------------------
 const previewPanel = document.getElementById("preview-panel");
 const previewFrame = document.getElementById("preview-frame");
 const btnPC = document.getElementById("preview-pc");
@@ -20,6 +32,8 @@ let lastHTML = "";
 let lastCSS = "";
 let lastJS = "";
 
+let controller = null;
+
 // ---------------------------------------------------------
 // SISTEMA DE MENSAJES
 // ---------------------------------------------------------
@@ -30,16 +44,21 @@ function agregarMensaje(tipo, texto) {
 
     const avatar = document.createElement("img");
     avatar.classList.add("avatar");
-    avatar.src = tipo === "usuario" ? "https://i.imgur.com/0y0y0y0.png" : "https://i.imgur.com/1X1X1X1.png";
+    avatar.src = tipo === "usuario"
+        ? "https://i.imgur.com/0y0y0y0.png"
+        : "https://i.imgur.com/1X1X1X1.png";
 
     const bubble = document.createElement("div");
     bubble.classList.add("bubble");
 
-    // Detectar si la IA devolvió archivos web
+    // Detectar si la IA devolvió una web completa
     if (tipo === "ia" && texto.includes("<html")) {
         procesarWebGenerada(texto);
         bubble.textContent = "📄 Se generó una página web. Abriendo preview...";
-    } else if (texto.includes("```")) {
+    }
+
+    // Detectar bloques de código
+    else if (texto.includes("```")) {
         const partes = texto.split("```");
 
         bubble.innerHTML = partes[0];
@@ -55,7 +74,9 @@ function agregarMensaje(tipo, texto) {
 
         code.appendChild(copyBtn);
         bubble.appendChild(code);
-    } else {
+    }
+
+    else {
         bubble.textContent = texto;
     }
 
@@ -67,26 +88,57 @@ function agregarMensaje(tipo, texto) {
 }
 
 // ---------------------------------------------------------
-// ENVÍO DE MENSAJES
+// SISTEMA DE ARCHIVOS ADJUNTOS
+// ---------------------------------------------------------
+
+btnFile.onclick = () => fileInput.click();
+
+fileInput.onchange = () => {
+    archivosAdjuntos = Array.from(fileInput.files);
+    mostrarArchivosAdjuntos();
+};
+
+function mostrarArchivosAdjuntos() {
+    attachedFilesDiv.innerHTML = "";
+
+    archivosAdjuntos.forEach(file => {
+        const tag = document.createElement("div");
+        tag.classList.add("file-tag");
+        tag.textContent = "📎 " + file.name;
+        attachedFilesDiv.appendChild(tag);
+    });
+}
+
+// ---------------------------------------------------------
+// ENVÍO DE MENSAJES + ARCHIVOS
 // ---------------------------------------------------------
 
 async function enviar() {
     const texto = input.value.trim();
-    if (!texto) return;
+    if (!texto && archivosAdjuntos.length === 0) return;
 
-    agregarMensaje("usuario", texto);
-    input.value = "";
+    agregarMensaje("usuario", texto || "📎 Archivo enviado");
 
     typing.classList.remove("hidden");
     btnStop.classList.remove("hidden");
 
     controller = new AbortController();
 
+    const formData = new FormData();
+    formData.append("mensaje", texto);
+
+    archivosAdjuntos.forEach(file => {
+        formData.append("archivos", file);
+    });
+
+    input.value = "";
+    archivosAdjuntos = [];
+    attachedFilesDiv.innerHTML = "";
+
     try {
         const res = await fetch("https://code-ia-3uq5.onrender.com/api/chat", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mensaje: texto }),
+            body: formData,
             signal: controller.signal
         });
 
@@ -115,7 +167,6 @@ input.addEventListener("keypress", e => {
 // ---------------------------------------------------------
 
 function procesarWebGenerada(texto) {
-    // Extraer HTML, CSS y JS del mensaje de la IA
     lastHTML = extraerBloque(texto, "html");
     lastCSS = extraerBloque(texto, "css");
     lastJS = extraerBloque(texto, "javascript");
