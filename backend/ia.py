@@ -403,6 +403,17 @@ def responder_stream(mensaje: str) -> Generator[str, None, None]:
             try:
                 linea = linea.decode("utf-8")
 
+                # ⭐ MANEJO DE ERRORES DEL MODELO (ANTES NO LO TENÍAS)
+                if linea.startswith("{"):
+                    try:
+                        err = json.loads(linea)
+                        msg = err.get("error") or err.get("message") or str(err)
+                        yield f"⚠️ Error del modelo: {msg}"
+                        return
+                    except:
+                        pass
+
+                # ⭐ SOLO PROCESAMOS CHUNKS VÁLIDOS
                 if not linea.startswith("data: "):
                     continue
 
@@ -420,8 +431,11 @@ def responder_stream(mensaje: str) -> Generator[str, None, None]:
 
             except Exception as e:
                 print("ERROR STREAM:", e)
+                yield "⚠️ Error procesando la respuesta."
+                return
 
     guardar("assistant", respuesta_completa)
+  
 
 # ==========================================================
 # RESPUESTA SIN STREAM (POR SI LA NECESITAS)
