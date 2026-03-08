@@ -2,6 +2,7 @@ import requests
 import os
 import sqlite3
 import threading
+import json
 
 API_KEY = os.getenv("API_KEY")
 DB_PATH = "historial.db"
@@ -55,10 +56,9 @@ FORMATO DE RESPUESTA
 4. Si el usuario pide algo visual (web, dashboard), organiza bien el HTML/CSS/JS.
 """
 
-
-# ------------------------------
+# ==========================================================
 # MEMORIA
-# ------------------------------
+# ==========================================================
 def init_db():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("""
@@ -90,9 +90,9 @@ def historial():
 
 init_db()
 
-# ------------------------------
-# STREAMING
-# ------------------------------
+# ==========================================================
+# STREAMING PARA TEXTO (LLAMA 3 70B)
+# ==========================================================
 def responder_stream(mensaje):
     guardar("user", mensaje)
 
@@ -110,7 +110,8 @@ def responder_stream(mensaje):
         "stream": True,
         "messages": [
             {"role": "system", "content": INSTRUCCIONES},
-            *historial()
+            *historial(),
+            {"role": "user", "content": mensaje}
         ]
     }
 
@@ -123,20 +124,97 @@ def responder_stream(mensaje):
 
             try:
                 linea = linea.decode("utf-8")
-                if linea.startswith("data: "):
-                    contenido = linea[6:]
-                    if contenido == "[DONE]":
-                        break
 
-                    import json
-                    j = json.loads(contenido)
-                    delta = j["choices"][0]["delta"].get("content", "")
+                if not linea.startswith("data: "):
+                    continue
 
-                    if delta:
-                        respuesta_completa += delta
-                        yield delta
+                contenido = linea[6:]
+
+                if contenido == "[DONE]":
+                    break
+
+                j = json.loads(contenido)
+                delta = j["choices"][0]["delta"].get("content", "")
+
+                if delta:
+                    respuesta_completa += delta
+                    yield delta
 
             except Exception as e:
                 print("ERROR STREAM:", e)
 
         guardar("assistant", respuesta_completa)
+
+# ==========================================================
+# VISIÓN (LLaVA) — SOLO IMÁGENES
+# ==========================================================
+def responder_imagen(imagenes_b64):
+    guardar("user", "[IMAGEN]")
+
+    url = "https://openrouter.ai/api/v1/chat/completions"
+
+    mensajes = [
+        {"role": "system", "content": INSTRUCCIONES},
+        *historial(),
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Analiza estas imágenes y extrae todo el código, errores o información útil."},
+                *[
+                    {"type": "image_url", "image_url": f"data:image/png;base64,{img}"}
+                    for img in imagenes_b64
+                ]
+            ]
+        }
+    ]
+
+    data = {
+        "model": "llava-hf/llava-1.5-7b-hf",
+        "messages": mensajes
+    }
+
+    r = requests.post(url, json=data, headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {API_KEY}"
+    })
+
+    respuesta = r.json()["choices"][0]["message"]["content"]
+    guardar("assistant", respuesta)
+    return respuesta
+
+# ==========================================================
+# TEXTO + IMÁGENES (LLaVA)
+# ==========================================================
+def responder_mixto(mensaje, imagenes_b64):
+    guardar("user", mensaje + " [IMAGEN]")
+
+    url = "https://openrouter.ai/api/v1/chat/completions"
+
+    mensajes = [
+        {"role": "system", "content": INSTRUCCIONES},
+        *historial(),
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": mensaje},
+                *[
+                    {"type": "image_url", "image_url": f"data:image/png;base64,{img}"}
+                    for img in imagenes_b64
+                ]
+            ]
+        }
+    ]
+
+    data = {
+        "model": "llava-hf/llava-1.5-7b-hf",
+        "messages": mensajes
+    }
+
+    r = requests.post(url, json=data, headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {API_KEY}"
+    })
+
+    respuesta = r.json()["choices"][0]["message"]["content"]
+    guardar("assistant", respuesta)
+    return respuesta
