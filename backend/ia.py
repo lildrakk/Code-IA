@@ -298,6 +298,11 @@ FORMATO DE RESPUESTA
 """
 
 def responder(mensaje: str) -> str:
+    print("========== DEBUG ==========")
+    print("API_KEY:", API_KEY)
+    print("MENSAJE RECIBIDO:", mensaje)
+    print("===========================")
+
     url = "https://api.deepseek.com/chat/completions"
 
     headers = {
@@ -316,19 +321,25 @@ def responder(mensaje: str) -> str:
     try:
         resp = requests.post(url, json=data, headers=headers, timeout=20)
 
+        # Si DeepSeek devuelve error, lo mostramos en logs
         if resp.status_code != 200:
-            return "⚠️ La IA tardó demasiado o devolvió un error."
+            print("ERROR DEEPSEEK:", resp.status_code, resp.text)
+            return f"⚠️ Error de DeepSeek ({resp.status_code}). Revisa tu API Key o el servidor."
 
         j = resp.json()
         contenido = j.get("choices", [{}])[0].get("message", {}).get("content")
 
         if not contenido:
+            print("ERROR: DeepSeek devolvió JSON sin contenido:", j)
             return "⚠️ No pude generar una respuesta válida."
 
+        print("RESPUESTA DEEPSEEK:", contenido[:200])  # mostramos solo los primeros 200 chars
         return contenido
 
     except requests.exceptions.Timeout:
+        print("ERROR: Timeout al llamar a DeepSeek")
         return "⚠️ La IA tardó demasiado en responder."
 
-    except Exception:
+    except Exception as e:
+        print("ERROR INESPERADO:", e)
         return "⚠️ Error inesperado procesando tu mensaje."
