@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands, tasks
 import datetime, psutil, time
 
-STATUS_CHANNEL_ID = 123456789012345678  # ← pon aquí el canal donde irá el panel
+STATUS_CHANNEL_ID = 1488931533472399660  # ← pon aquí el canal donde irá el panel
 MESSAGE_ID_FILE = "status_message.txt"
 
 class StatusPanel(commands.Cog):
