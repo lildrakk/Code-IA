@@ -1,9 +1,29 @@
 import discord
 from discord.ext import commands, tasks
-import datetime, psutil, time
+import datetime, psutil, time, shutil
 
-STATUS_CHANNEL_ID = 1488931533472399660  # ← pon aquí el canal donde irá el panel
+STATUS_CHANNEL_ID = 1488931533472399660  # Canal donde irá el panel
 MESSAGE_ID_FILE = "status_message.txt"
+
+# ============================
+# LÍMITES REALES DEL PLAN
+# ============================
+
+MAX_RAM_MB = 512
+MAX_DISK_MB = 512
+MAX_CPU_PERCENT = 75
+
+# ============================
+# FUNCIÓN PARA BARRAS
+# ============================
+
+def barra(porcentaje):
+    bloques = int((porcentaje / 100) * 10)
+    return "█" * bloques + "░" * (10 - bloques)
+
+# ============================
+# PANEL
+# ============================
 
 class StatusPanel(commands.Cog):
     def __init__(self, bot):
@@ -59,18 +79,24 @@ class StatusPanel(commands.Cog):
         uptime_seconds = int(time.time() - self.start_time)
         uptime = str(datetime.timedelta(seconds=uptime_seconds))
 
+        # ============================
+        # USO REAL DEL CONTENEDOR
+        # ============================
+
         # RAM
         ram = psutil.virtual_memory()
-        ram_used = round(ram.used / (1024**3), 2)
-        ram_total = round(ram.total / (1024**3), 2)
+        ram_used_mb = round(ram.used / (1024**2), 2)
+        ram_percent = min((ram_used_mb / MAX_RAM_MB) * 100, 100)
 
         # CPU
-        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_real = psutil.cpu_percent(interval=1)
+        cpu_percent = min(cpu_real, MAX_CPU_PERCENT)
+        cpu_bar_percent = (cpu_percent / MAX_CPU_PERCENT) * 100
 
         # DISCO
-        disk = psutil.disk_usage("/")
-        disk_used = round(disk.used / (1024**3), 2)
-        disk_total = round(disk.total / (1024**3), 2)
+        total, used, free = shutil.disk_usage(".")
+        disk_used_mb = round(used / (1024**2), 2)
+        disk_percent = min((disk_used_mb / MAX_DISK_MB) * 100, 100)
 
         now = datetime.datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
 
@@ -85,15 +111,30 @@ class StatusPanel(commands.Cog):
 
         embed.add_field(name="<a:flechazul:1492182951532826684> Estado", value="Online", inline=True)
         embed.add_field(name="<:wifi:1492176492753588344> Ping", value=f"{ping} ms", inline=True)
-        embed.add_field(name="<:discord:1483506738954244258>Servidores", value=str(servers), inline=True)
+        embed.add_field(name="<:discord:1483506738954244258> Servidores", value=str(servers), inline=True)
 
         embed.add_field(name="<:cronometro:1492176494422659087> Uptime", value=uptime, inline=False)
 
-        embed.add_field(name="<:nose:1491491155198607440> RAM", value=f"{ram_used} GB / {ram_total} GB", inline=True)
-        embed.add_field(name="<:candado:1491537429889552514> Disco", value=f"{disk_used} GB / {disk_total} GB", inline=True)
-        embed.add_field(name="<:ruedita:1491491111557140570> CPU", value=f"{cpu_percent}%", inline=True)
+        embed.add_field(
+            name="<:nose:1491491155198607440> RAM",
+            value=f"{barra(ram_percent)} {ram_used_mb} MB / {MAX_RAM_MB} MB",
+            inline=False
+        )
 
-         
+        embed.add_field(
+            name="<:candado:1491537429889552514> Disco",
+            value=f"{barra(disk_percent)} {disk_used_mb} MB / {MAX_DISK_MB} MB",
+            inline=False
+        )
+
+        embed.add_field(
+            name="<:ruedita:1491491111557140570> CPU",
+            value=f"{barra(cpu_bar_percent)} {cpu_percent}% / {MAX_CPU_PERCENT}%",
+            inline=False
+        )
+
+        
+
         embed.set_footer(text="ModdyBot • Panel de estado")
 
         # Editar mensaje existente
@@ -113,4 +154,4 @@ class StatusPanel(commands.Cog):
         await self.bot.wait_until_ready()
 
 async def setup(bot):
-    await bot.add_cog(StatusPanel(bot))
+    await bot.add_cog(StatusPanel(bot)) 
