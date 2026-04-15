@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands, tasks
-import datetime, psutil, time, shutil
+import datetime, psutil, time, shutil, os
 
-STATUS_CHANNEL_ID = 1488931533472399660  # Canal donde irá el panel
+STATUS_CHANNEL_ID = 1488931533472399660
 MESSAGE_ID_FILE = "status_message.txt"
 
 # ============================
@@ -22,6 +22,19 @@ def barra(porcentaje):
     return "█" * bloques + "░" * (10 - bloques)
 
 # ============================
+# TAMAÑO REAL DE LA CARPETA
+# ============================
+
+def folder_size(path="."):
+    total = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if os.path.exists(fp):
+                total += os.path.getsize(fp)
+    return round(total / (1024**2), 2)  # MB
+
+# ============================
 # PANEL
 # ============================
 
@@ -34,22 +47,16 @@ class StatusPanel(commands.Cog):
     def cog_unload(self):
         self.update_panel.cancel()
 
-    # Guardar ID del mensaje
     def save_message_id(self, msg_id):
         with open(MESSAGE_ID_FILE, "w") as f:
             f.write(str(msg_id))
 
-    # Cargar ID del mensaje
     def load_message_id(self):
         try:
             with open(MESSAGE_ID_FILE, "r") as f:
                 return int(f.read().strip())
         except:
             return None
-
-    # ============================
-    # TAREA AUTOMÁTICA CADA 60s
-    # ============================
 
     @tasks.loop(seconds=60)
     async def update_panel(self):
@@ -75,29 +82,28 @@ class StatusPanel(commands.Cog):
         ping = round(self.bot.latency * 1000)
         servers = len(self.bot.guilds)
 
-        # Uptime
         uptime_seconds = int(time.time() - self.start_time)
         uptime = str(datetime.timedelta(seconds=uptime_seconds))
 
         # ============================
-        # USO REAL DEL CONTENEDOR
+        # USO REAL DEL BOT
         # ============================
 
-        # RAM (clamp a tu plan)
-        ram = psutil.virtual_memory()
-        ram_used_mb_real = round(ram.used / (1024**2), 2)
-        ram_used_mb = min(ram_used_mb_real, MAX_RAM_MB)
+        process = psutil.Process()
+
+        # RAM REAL DEL PROCESO
+        ram_used_mb = round(process.memory_info().rss / (1024**2), 2)
+        ram_used_mb = min(ram_used_mb, MAX_RAM_MB)
         ram_percent = (ram_used_mb / MAX_RAM_MB) * 100
 
-        # CPU (real pero comparada con tu límite)
-        cpu_real = psutil.cpu_percent(interval=1)
+        # CPU REAL DEL PROCESO
+        cpu_real = process.cpu_percent(interval=1)
         cpu_percent = min(cpu_real, MAX_CPU_PERCENT)
         cpu_bar_percent = (cpu_percent / MAX_CPU_PERCENT) * 100
 
-        # Disco (solo carpeta del bot, clamp a tu plan)
-        total, used, free = shutil.disk_usage(".")
-        disk_used_mb_real = round(used / (1024**2), 2)
-        disk_used_mb = min(disk_used_mb_real, MAX_DISK_MB)
+        # DISCO REAL DE LA CARPETA
+        disk_used_mb = folder_size()
+        disk_used_mb = min(disk_used_mb, MAX_DISK_MB)
         disk_percent = (disk_used_mb / MAX_DISK_MB) * 100
 
         now = datetime.datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
@@ -112,10 +118,10 @@ class StatusPanel(commands.Cog):
         )
 
         embed.add_field(name="<a:flechazul:1492182951532826684> Estado", value="Online", inline=True)
-        embed.add_field(name="<:wifi:1492176492753588344> Ping", value=f"{ping} ms", inline=True)
+        embed.add_field(name="<:wifi:1493976408865898568> Ping", value=f"{ping} ms", inline=True)
         embed.add_field(name="<:discord:1483506738954244258> Servidores", value=str(servers), inline=True)
 
-        embed.add_field(name="<:cronometro:1492176494422659087> Uptime", value=uptime, inline=False)
+        embed.add_field(name="<:cronometro:1493972193598509056> Uptime", value=uptime, inline=False)
 
         embed.add_field(
             name="<:nose:1491491155198607440> RAM",
@@ -135,11 +141,10 @@ class StatusPanel(commands.Cog):
             inline=False
         )
 
-        embed.add_field(name="🕓 Última actualización", value=now, inline=False)
+        
 
-        embed.set_footer(text="ModdyBot • Panel de estado automático")
+        embed.set_footer(text="ModdyBot • Panel de estado")
 
-        # Editar mensaje existente
         if message:
             try:
                 await message.edit(embed=embed)
@@ -147,7 +152,6 @@ class StatusPanel(commands.Cog):
             except:
                 pass
 
-        # Crear mensaje nuevo si no existe
         new_msg = await channel.send(embed=embed)
         self.save_message_id(new_msg.id)
 
