@@ -83,20 +83,22 @@ class StatusPanel(commands.Cog):
         # USO REAL DEL CONTENEDOR
         # ============================
 
-        # RAM
+        # RAM (clamp a tu plan)
         ram = psutil.virtual_memory()
-        ram_used_mb = round(ram.used / (1024**2), 2)
-        ram_percent = min((ram_used_mb / MAX_RAM_MB) * 100, 100)
+        ram_used_mb_real = round(ram.used / (1024**2), 2)
+        ram_used_mb = min(ram_used_mb_real, MAX_RAM_MB)
+        ram_percent = (ram_used_mb / MAX_RAM_MB) * 100
 
-        # CPU
+        # CPU (real pero comparada con tu límite)
         cpu_real = psutil.cpu_percent(interval=1)
         cpu_percent = min(cpu_real, MAX_CPU_PERCENT)
         cpu_bar_percent = (cpu_percent / MAX_CPU_PERCENT) * 100
 
-        # DISCO
+        # Disco (solo carpeta del bot, clamp a tu plan)
         total, used, free = shutil.disk_usage(".")
-        disk_used_mb = round(used / (1024**2), 2)
-        disk_percent = min((disk_used_mb / MAX_DISK_MB) * 100, 100)
+        disk_used_mb_real = round(used / (1024**2), 2)
+        disk_used_mb = min(disk_used_mb_real, MAX_DISK_MB)
+        disk_percent = (disk_used_mb / MAX_DISK_MB) * 100
 
         now = datetime.datetime.utcnow().strftime("%d/%m/%Y %H:%M:%S")
 
@@ -133,9 +135,9 @@ class StatusPanel(commands.Cog):
             inline=False
         )
 
-        
+        embed.add_field(name="🕓 Última actualización", value=now, inline=False)
 
-        embed.set_footer(text="ModdyBot • Panel de estado")
+        embed.set_footer(text="ModdyBot • Panel de estado automático")
 
         # Editar mensaje existente
         if message:
