@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
 
 # Cargar .env
 load_dotenv()
@@ -48,6 +49,12 @@ def llamar_al_modelo(prompt):
 
     response = requests.post(GROQ_URL, json=data, headers=headers)
     result = response.json()
+
+    # Manejo de errores
+    if "choices" not in result:
+        error_msg = result.get("error", {}).get("message", "Error desconocido en la API de Groq.")
+        return f"Error al generar respuesta: {error_msg}"
+
     return result["choices"][0]["message"]["content"]
 
 @app.post("/generate")
@@ -76,11 +83,9 @@ async def generate(req: ChatRequest):
         "filename": filename
     }
 
-# ⬇️ **MONTAR FRONTEND AL FINAL (IMPORTANTE)**
-from fastapi.staticfiles import StaticFiles
+# Montar frontend al final
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
-# Ejecutar servidor
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=25677)
+    uvicorn.run(app, host="0.0.0.0", port=25677) 
