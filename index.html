@@ -1,62 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code IA — Futuristic Assistant</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Xtreme AI</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <div id="sidebar">
+    <h2>Xtreme AI</h2>
+    <button onclick="nuevoChat()">Nuevo chat</button>
+    <div id="lista-chats"></div>
+  </div>
 
-    <!-- FONDO ANIMADO -->
-    <div class="background"></div>
+  <div id="chat">
+    <div id="mensajes"></div>
 
-    <header class="header">
-        <h1 class="title">⚡ Code IA</h1>
-        <p class="subtitle">Asistente de programación avanzado</p>
-    </header>
+    <div id="input-area">
+      <textarea id="prompt" placeholder="Escribe tu mensaje..."></textarea>
+      <select id="mode">
+        <option value="chat">Chat</option>
+        <option value="file">Archivo</option>
+      </select>
+      <input id="language" placeholder="python, js, etc.">
+      <button onclick="enviar()">Enviar</button>
+    </div>
+  </div>
 
-    <main class="main">
-
-        <!-- CONTENEDOR DEL CHAT -->
-        <div id="chat-container" class="chat-container">
-            <div id="chat" class="chat"></div>
-            <div id="typing" class="typing hidden">Code IA está escribiendo...</div>
-        </div>
-
-        <!-- ÁREA DE INPUT -->
-        <div id="input-area" class="input-area">
-
-            <!-- BOTÓN DE ARCHIVOS -->
-            <button id="btn-file" class="file-btn">📎</button>
-
-            <!-- INPUT DE ARCHIVOS (OCULTO) -->
-            <input type="file" id="file-input" class="hidden" multiple accept="image/*">
-
-            <!-- TEXTAREA PROFESIONAL -->
-            <textarea id="mensaje" placeholder="Escribe tu mensaje aquí..."></textarea>
-
-            <!-- BOTÓN ENVIAR -->
-            <button id="btn-enviar" class="send-btn">Enviar</button>
-
-            <!-- BOTÓN DETENER STREAMING -->
-            <button id="btn-stop" class="stop-btn hidden">Detener</button>
-        </div>
-
-        <!-- ARCHIVOS ADJUNTADOS (MINIATURAS) -->
-        <div id="attached-files" class="attached-files"></div>
-
-    </main>
-
-    <footer class="footer">
-        <p>Creado por lil_drakko — Proyecto Code IA</p>
-    </footer>
-
-    <!-- ❌ PREVIEW ELIMINADO COMPLETAMENTE -->
-
-    <script src="script.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
