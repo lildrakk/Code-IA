@@ -1,31 +1,147 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Xtreme AI</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="sidebar">
-    <h2>Xtreme AI</h2>
-    <button onclick="nuevoChat()">Nuevo chat</button>
-    <div id="lista-chats"></div>
-  </div>
+  <div class="app-root">
+    <!-- Sidebar / Menú -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">Xtreme AI</div>
+        <button class="sidebar-close" id="sidebar-close">✕</button>
+      </div>
 
-  <div id="chat">
-    <div id="mensajes"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Chats</div>
+        <button class="sidebar-button primary" id="new-chat-btn">+ Nuevo chat</button>
+        <div class="chat-list" id="chat-list"></div>
+      </div>
 
-    <div id="input-area">
-      <textarea id="prompt" placeholder="Escribe tu mensaje..."></textarea>
-      <select id="mode">
-        <option value="chat">Chat</option>
-        <option value="file">Archivo</option>
-      </select>
-      <input id="language" placeholder="python, js, etc.">
-      <button onclick="enviar()">Enviar</button>
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Cuenta</div>
+        <button class="sidebar-button" id="profile-btn">Perfil</button>
+        <button class="sidebar-button" id="settings-btn">Ajustes</button>
+        <button class="sidebar-button" id="about-btn">Acerca de</button>
+      </div>
+    </aside>
+
+    <!-- Overlay para móvil -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Main -->
+    <div class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button" id="menu-toggle" title="Menú">
+            ☰
+          </button>
+          <div class="topbar-title">
+            <div class="topbar-logo">Xtreme AI</div>
+            <div class="topbar-subtitle">Asistente experto en código y proyectos completos</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="icon-button" id="theme-toggle" title="Tema">
+            🌙
+          </button>
+          <button class="avatar-button" id="avatar-button" title="Perfil">
+            XA
+          </button>
+        </div>
+      </header>
+
+      <!-- Contenido principal -->
+      <main class="chat-main">
+        <div class="chat-welcome" id="welcome">
+          <h1>¿Qué quieres construir hoy?</h1>
+          <p>
+            Xtreme AI puede crear bots de Discord, dashboards, paneles de hosting, webs completas,
+            APIs y mucho más.
+          </p>
+          <div class="welcome-tags">
+            <span class="tag">Bots</span>
+            <span class="tag">Dashboards</span>
+            <span class="tag">APIs</span>
+            <span class="tag">Fullstack</span>
+            <span class="tag">Diseño UI</span>
+          </div>
+        </div>
+
+        <div class="chat-messages" id="messages"></div>
+      </main>
+
+      <!-- Barra inferior -->
+      <footer class="chat-footer">
+        <div class="footer-top">
+          <div class="mode-toggle">
+            <button class="mode-pill active" data-mode="chat" id="mode-chat">Chat</button>
+            <button class="mode-pill" data-mode="file" id="mode-file">Archivo</button>
+          </div>
+          <div class="lang-input-wrapper">
+            <input
+              id="language"
+              class="lang-input"
+              placeholder="Lenguaje (python, js, java...)"
+            />
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="input-left">
+            <button class="icon-button" id="attach-file-btn" title="Adjuntar archivo">
+              📎
+            </button>
+            <button class="icon-button" id="attach-image-btn" title="Adjuntar imagen">
+              🖼
+            </button>
+          </div>
+
+          <div class="input-center">
+            <textarea
+              id="prompt"
+              class="prompt-input"
+              placeholder="Escribe tu mensaje o describe el proyecto que quieres..."
+              rows="1"
+            ></textarea>
+          </div>
+
+          <div class="input-right">
+            <button class="send-button" id="send-button" title="Enviar">
+              ➤
+            </button>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <div class="footer-info">
+            Xtreme AI · Usa Groq (Llama 3) para generar código de alta calidad.
+          </div>
+          <div class="footer-files" id="attached-files"></div>
+        </div>
+
+        <!-- Inputs ocultos para archivos -->
+        <input type="file" id="file-input" class="hidden-input" multiple />
+        <input type="file" id="image-input" class="hidden-input" accept="image/*" multiple />
+      </footer>
+    </div>
+
+    <!-- Panel lateral de ajustes / perfil -->
+    <div class="sidepanel" id="sidepanel">
+      <div class="sidepanel-header">
+        <div class="sidepanel-title" id="sidepanel-title">Panel</div>
+        <button class="sidepanel-close" id="sidepanel-close">✕</button>
+      </div>
+      <div class="sidepanel-content" id="sidepanel-content">
+        <!-- Se rellena desde JS -->
+      </div>
     </div>
   </div>
 
   <script src="app.js"></script>
 </body>
-</html>
+  </html>
